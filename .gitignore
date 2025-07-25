@@ -1,0 +1,378 @@
+# GeoTest Framework .gitignore
+# Comprehensive ignore file covering all 8 phases of development
+
+# =============================================================================
+# PYTHON SPECIFIC
+# =============================================================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# =============================================================================
+# VIRTUAL ENVIRONMENTS
+# =============================================================================
+
+# Virtual environments (Phase 1)
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+myenv/
+.venv/
+.env/
+
+# =============================================================================
+# TEST REPORTS & ARTIFACTS (Phase 1+)
+# =============================================================================
+
+# Pytest reports
+reports/
+test-reports/
+.pytest_cache/
+
+# HTML test reports
+*.html
+report.html
+test_report.html
+
+# JSON test reports  
+*.json
+report.json
+test_report.json
+
+# Coverage reports
+.coverage
+coverage.xml
+htmlcov/
+
+# JUnit XML reports (Phase 3 CI/CD)
+junit.xml
+test-results.xml
+
+# =============================================================================
+# ALLURE REPORTS (Phase 4)
+# =============================================================================
+
+# Allure results and reports
+allure-results/
+allure-report/
+.allure/
+allure_results/
+allure_report/
+
+# =============================================================================
+# DOCKER & CONTAINERIZATION (Phase 3)
+# =============================================================================
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+.docker/
+
+# Container logs
+*.log
+
+# =============================================================================
+# CI/CD & GITHUB ACTIONS (Phase 3)
+# =============================================================================
+
+# GitHub Actions artifacts (handled by GitHub, but local testing)
+.github/workflows/artifacts/
+
+# CI temporary files
+ci-temp/
+.ci/
+
+# =============================================================================
+# CONFIGURATION & SECRETS
+# =============================================================================
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+secrets.json
+config.json
+local_config.py
+
+# API keys and credentials (NEVER commit these)
+*.key
+*.pem
+credentials/
+secrets/
+
+# Local configuration overrides
+local_settings.py
+dev_config.py
+
+# =============================================================================
+# DATA FILES (Phase 2)
+# =============================================================================
+
+# CSV test data (except templates)
+test_data/*.csv
+data/*.csv
+# Keep template files
+!*_template.csv
+!*_example.csv
+
+# Generated test data
+generated_data/
+temp_data/
+mock_data/
+
+# Cache files
+*.cache
+cache/
+.cache/
+
+# =============================================================================
+# PERFORMANCE & MONITORING (Phase 6)
+# =============================================================================
+
+# Performance test results
+performance_results/
+load_test_results/
+benchmark_results/
+
+# Monitoring data
+metrics/
+logs/
+*.log
+*.log.*
+
+# Memory profiling
+*.prof
+*.profile
+
+# =============================================================================
+# DEVELOPMENT TOOLS
+# =============================================================================
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebook checkpoints (if used for analysis)
+.ipynb_checkpoints/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation (Phase 8)
+site/
+docs/_build/
+
+# =============================================================================
+# PACKAGE MANAGERS & DEPENDENCIES
+# =============================================================================
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# PDM
+.pdm.toml
+
+# =============================================================================
+# TEMPORARY & SYSTEM FILES
+# =============================================================================
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+*.tmp
+*.temp
+
+# OS/User generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+geotest-roadmap.md
+
+# =============================================================================
+# PHASE-SPECIFIC IGNORES
+# =============================================================================
+
+# Phase 2: Data-driven testing
+csv_cache/
+data_validation_cache/
+
+# Phase 3: Containerization
+.docker/
+docker-data/
+
+# Phase 4: Advanced reporting
+report_history/
+trend_data/
+
+# Phase 5: Bug tracking integration
+github_issues_cache/
+issue_templates_generated/
+
+# Phase 6: Performance testing
+locust_results/
+performance_baseline/
+
+# Phase 7: Advanced features
+chaos_test_results/
+contract_test_cache/
+ai_generated/
+
+# Phase 8: Production polish
+demo_recordings/
+optimization_results/
+
+# =============================================================================
+# BACKUP & ARCHIVE FILES
+# =============================================================================
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Archive files (unless specifically needed)
+*.zip
+*.tar
+*.tar.gz
+*.rar
+
+# =============================================================================
+# CUSTOM PROJECT IGNORES
+# =============================================================================
+
+# Local development overrides
+local/
+personal/
+experimental/
+
+# Generated documentation
+api_docs/
+auto_generated_docs/
+
+# Database files (if SQLite used for caching)
+*.db
+*.sqlite
+*.sqlite3
+
+# =============================================================================
+# SECURITY & COMPLIANCE
+# =============================================================================
+
+# Security scan results
+security_reports/
+vulnerability_reports/
+
+# Audit logs (keep in secure location, not in repo)
+audit_logs/
+
+# =============================================================================
+# NODE.JS (if front-end dashboard added later)
+# =============================================================================
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =============================================================================
+# FUTURE PHASES PREPARATION
+# =============================================================================
+
+# Kubernetes manifests with secrets
+k8s-secrets/
+helm-secrets/
+
+# Grafana dashboards with sensitive data
+grafana_data/
+
+# Multi-API orchestration data
+orchestration_cache/
+
+# =============================================================================
+# KEEP THESE FILES (EXPLICIT INCLUDES)
+# =============================================================================
+
+# Always keep these important files
+!.gitignore
+!README.md
+!requirements.txt
+!pytest.ini
+!Dockerfile
+!docker-compose.yml
+!.github/workflows/*.yml
+
+# Keep template and example files
+!*_template.*
+!*_example.*
+!sample_*
