@@ -37,14 +37,20 @@ class RestCountriesClient:
             'Accept': 'application/json'
         })
     
-    def _make_request(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
-        # Make HTTP request to REST Countries API
+    def _make_request(self, endpoint: str, params: Optional[Dict] = None, capture_response: bool = True) -> Dict[str, Any]:
+        # Make HTTP request to REST Countries API with enhanced debugging
         # endpoint: API endpoint path
         # params: Query parameters
+        # capture_response: Whether to capture detailed response data
         # Returns: Response data as dictionary
         # Raises: requests.RequestException if request fails
         url = f"{self.BASE_URL}/{endpoint}"
         start_time = time.time()
+        request_details = {
+            'url': url,
+            'params': params,
+            'timestamp': start_time
+        }
         
         try:
             self.logger.info(f"Making request to: {url}")
@@ -60,12 +66,43 @@ class RestCountriesClient:
             response_time = time.time() - start_time
             self.logger.info(f"Response received in {response_time:.3f}s - Status: {response.status_code}")
             
+            # Enhanced response capture for debugging
+            if capture_response:
+                response_details = {
+                    'status_code': response.status_code,
+                    'response_time': response_time,
+                    'headers': dict(response.headers),
+                    'content_length': len(response.content) if response.content else 0
+                }
+                self.logger.debug(f"Response details: {response_details}")
+            
             response.raise_for_status()
-            return response.json()
+            json_data = response.json()
+            
+            # Log response data summary
+            if isinstance(json_data, list):
+                self.logger.info(f"Received {len(json_data)} items in response")
+            elif isinstance(json_data, dict):
+                self.logger.info(f"Received object with {len(json_data)} fields")
+            
+            return json_data
             
         except requests.exceptions.RequestException as e:
             response_time = time.time() - start_time
-            self.logger.error(f"Request failed after {response_time:.3f}s: {str(e)}")
+            error_details = {
+                'error_type': type(e).__name__,
+                'error_message': str(e),
+                'response_time': response_time,
+                'request_url': url
+            }
+            self.logger.error(f"Request failed after {response_time:.3f}s: {error_details}")
+            
+            # Capture error response details if available
+            if hasattr(e, 'response') and e.response is not None:
+                error_details['response_status'] = e.response.status_code
+                error_details['response_text'] = e.response.text[:500]  # First 500 chars
+                self.logger.debug(f"Error response details: {error_details}")
+            
             raise
     
     def get_all_countries(self, fields: Optional[str] = None) -> List[Dict[str, Any]]:
