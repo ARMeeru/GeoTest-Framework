@@ -1,0 +1,163 @@
+name: GeoTest Framework CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Daily regression runs at 02:00 UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  # Smoke tests - Quick validation
+  smoke-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build test image
+      run: |
+        docker compose build geotest
+    
+    - name: Run smoke tests
+      run: |
+        docker compose run --rm smoke-tests
+    
+    - name: Upload smoke test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: smoke-test-results
+        path: reports/smoke-*
+        retention-days: 30
+    
+    - name: Comment PR with smoke results
+      uses: actions/github-script@v7
+      if: github.event_name == 'pull_request' && always()
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const fs = require('fs');
+          try {
+            const reportPath = 'reports/smoke-report.json';
+            if (fs.existsSync(reportPath)) {
+              const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+              const summary = report.summary || {};
+              const status = summary.failed > 0 ? '❌ FAILED' : '✅ PASSED';
+              const body = `## Smoke Test Results ${status}
+              
+              **Summary:**
+              - Passed: ${summary.passed || 0}
+              - Failed: ${summary.failed || 0}  
+              - Total: ${summary.total || 0}
+              - Duration: ${report.duration || 'N/A'}s
+              
+              View detailed results in the [artifacts](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}).`;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            }
+          } catch (error) {
+            console.log('Could not post smoke test results:', error);
+          }
+
+  # Regression tests - Comprehensive validation
+  regression-tests:
+    runs-on: ubuntu-latest
+    needs: smoke-tests
+    if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[full-test]')
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build test image
+      run: |
+        docker compose build geotest
+    
+    - name: Run regression tests
+      run: |
+        docker compose run --rm regression-tests
+    
+    - name: Upload regression test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: regression-test-results
+        path: reports/regression-*
+        retention-days: 30
+
+  # Full test suite - All tests
+  full-tests:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    timeout-minutes: 20
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build test image
+      run: |
+        docker compose build geotest
+    
+    - name: Run all tests
+      run: |
+        docker compose run --rm all-tests
+    
+    - name: Upload full test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: full-test-results
+        path: reports/full-*
+        retention-days: 30
+    
+    - name: Check image size
+      run: |
+        IMAGE_SIZE=$(docker images geotest-framework-geotest --format "table {{.Size}}" | tail -n 1)
+        echo "Docker image size: $IMAGE_SIZE"
+        # Convert size to MB for comparison (basic check)
+        if docker images --format "table {{.Size}}" geotest-framework-geotest | grep -E "^[2-9][0-9][0-9]MB|^[1-9]GB"; then
+          echo "Warning: Image size might exceed 200MB target"
+        fi
+
+  # Security and quality checks
+  security-scan:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'geotest-framework-geotest:latest'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'

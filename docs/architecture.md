@@ -9,33 +9,37 @@ The GeoTest Framework is designed as a scalable, data-driven API testing system 
 │                    GeoTest Framework Architecture               │
 └─────────────────────────────────────────────────────────────────┘
 
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Test Runner   │    │   Data Layer    │    │   Reporting     │
-│                 │    │                 │    │                 │
-│ • pytest        │    │ • CSV Test Data │    │ • HTML Reports  │
-│ • Markers       │    │ • Pydantic      │    │ • JSON Reports  │
-│ • Fixtures      │    │ • Validation    │    │ • Allure (P4)   │
-└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
-          │                      │                      │
-          │                      │                      │
-          └──────────────────────┼──────────────────────┘
-                                 │
-                    ┌────────────┴────────────┐
-                    │   Test Framework Core   │
-                    │                         │
-                    │ • RestCountriesClient   │
-                    │ • Request/Response Log  │
-                    │ • Error Handling        │
-                    │ • Rate Limiting         │
-                    └─────────────┬───────────┘
-                                  │
-                     ┌────────────┴────────────┐
-                     │     External API        │
-                     │                         │
-                     │ • REST Countries v3.1   │
-                     │ • HTTP/JSON             │
-                     │ • Rate Limited          │
-                     └─────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                     Docker Container Layer                      │
+│                                                                 │
+│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────┐  │
+│  │   Test Runner   │    │   Data Layer    │    │  Reporting  │  │
+│  │                 │    │                 │    │             │  │
+│  │ • pytest        │    │ • CSV Test Data │    │ • HTML      │  │
+│  │ • Markers       │    │ • Pydantic      │    │ • JSON      │  │
+│  │ • Fixtures      │    │ • Validation    │    │ • Allure    │  │
+│  └─────────┬───────┘    └─────────┬───────┘    └─────────┬───┘  │
+│            │                      │                      │      │
+│            │                      │                      │      │
+│            └──────────────────────┼──────────────────────┘      │
+│                                   │                             │
+│                      ┌────────────┴────────────┐                │
+│                      │   Test Framework Core   │                │
+│                      │                         │                │
+│                      │ • RestCountriesClient   │                │
+│                      │ • Request/Response Log  │                │
+│                      │ • Error Handling        │                │
+│                      │ • Rate Limiting         │                │
+│                      └─────────────┬───────────┘                │
+└────────────────────────────────────┼────────────────────────────┘
+                                     │
+                      ┌──────────────┴──────────────┐
+                      │        External API         │
+                      │                             │
+                      │ • REST Countries v3.1       │
+                      │ • HTTP/JSON                 │
+                      │ • Rate Limited              │
+                      └─────────────────────────────┘
 ```
 
 ## Component Details
@@ -61,8 +65,8 @@ The GeoTest Framework is designed as a scalable, data-driven API testing system 
 ### 4. Reporting Layer
 - **HTML Reports**: Human-readable test results
 - **JSON Reports**: Machine-readable for CI/CD
+- **Allure Reports**: Advanced reporting with history tracking
 - **Execution Timing**: Performance monitoring
-- **Future**: Allure reports with history (Phase 4)
 
 ### 5. External Dependencies
 - **REST Countries API**: Primary data source
@@ -97,12 +101,26 @@ CSV Test Data → Pydantic Validation → Pytest Fixtures → Test Cases
 - Modular design for easy extension
 - Clear separation between data, logic, and presentation
 - Configurable test execution (smoke vs regression)
-- Future-ready for containerization (Phase 3)
+- Containerized deployment for consistent environments
+
+## Phase 3: Containerization & CI/CD Foundation (Completed)
+
+### Docker Integration
+- **Multi-stage Dockerfile**: Optimized builds with runtime isolation
+- **Docker Compose Services**: Organized test execution (smoke, regression, all-tests)
+- **Volume Mounting**: Persistent reports and results
+- **Health Checks**: API connectivity validation
+- **Non-root Security**: geotest user for secure container execution
+
+### CI/CD Ready Features
+- **Containerized Execution**: Consistent environments across development/CI
+- **Service Orchestration**: Multiple test configurations via Docker Compose
+- **Report Generation**: HTML, JSON, and Allure output in mounted volumes
+- **Future Allure Service**: Ready for Phase 4 advanced reporting
 
 ## Future Phases Integration
 
-- **Phase 3**: Docker containers wrap entire architecture
-- **Phase 4**: Allure reporting enhances reporting layer
+- **Phase 4**: Allure service integration for advanced reporting
 - **Phase 5**: GitHub Issues integration adds automation layer
 - **Phase 6**: Performance testing adds monitoring layer
 - **Phase 7**: Advanced features add chaos/contract testing

@@ -1,5 +1,4 @@
 # Data-driven tests using CSV test scenarios and parameterized testing
-# Phase 2: Scalable test data management
 
 import pytest
 import time
@@ -12,6 +11,7 @@ from src.models import ScenarioData, validate_country_data, validate_country_lis
 class TestDataDrivenScenarios:
     # Data-driven test class using CSV scenarios
 
+    @pytest.mark.smoke
     def test_smoke_scenarios_execution(self, smoke_scenarios: List[ScenarioData], 
                                      api_client: RestCountriesClient, 
                                      request_response_capture, test_result_tracker):
@@ -90,6 +90,7 @@ class TestDataDrivenScenarios:
         if failed_scenarios:
             pytest.fail(f"Failed smoke scenarios: {failed_scenarios}")
 
+    @pytest.mark.regression
     def test_negative_scenarios_execution(self, negative_scenarios: List[ScenarioData], 
                                         api_client: RestCountriesClient,
                                         request_response_capture, test_result_tracker):
@@ -161,6 +162,7 @@ class TestDataDrivenScenarios:
         if failed_scenarios:
             pytest.fail(f"Failed negative scenarios: {failed_scenarios}")
 
+    @pytest.mark.regression
     def test_edge_case_scenarios_execution(self, edge_case_scenarios: List[ScenarioData], 
                                          api_client: RestCountriesClient,
                                          request_response_capture, test_result_tracker):
@@ -244,6 +246,7 @@ class TestDataDrivenScenarios:
 class TestParameterizedCountries:
     # Parameterized tests using sample country data
 
+    @pytest.mark.smoke
     def test_sample_countries_validation(self, sample_countries: List[Dict[str, str]], 
                                        api_client: RestCountriesClient):
         # Test subset of countries for validation (limit to 10 for speed)
@@ -285,6 +288,7 @@ class TestParameterizedCountries:
         if failed_countries:
             pytest.fail(f"Failed country validations: {failed_countries}")
 
+    @pytest.mark.regression
     def test_alpha_code_consistency(self, sample_countries: List[Dict[str, str]], 
                                   api_client: RestCountriesClient):
         # Test alpha-2 and alpha-3 code consistency for subset of countries

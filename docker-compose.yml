@@ -1,0 +1,65 @@
+services:
+  # Test runner service
+  geotest:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: geotest-runner
+    volumes:
+      - ./reports:/app/reports
+    environment:
+      - PYTHONPATH=/app
+      - PYTEST_CURRENT_TEST=1
+      - PYTHONWARNINGS=ignore::pytest.PytestCacheWarning
+    networks:
+      - geotest-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('https://restcountries.com/v3.1/all', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Smoke tests - quick validation
+  smoke-tests:
+    extends: geotest
+    container_name: geotest-smoke
+    command: ["pytest", "-m", "smoke", "--html=reports/smoke-report.html", "--self-contained-html", "--json-report", "--json-report-file=reports/smoke-report.json", "-v", "--tb=short"]
+
+  # Regression tests - comprehensive suite
+  regression-tests:
+    extends: geotest
+    container_name: geotest-regression
+    command: ["pytest", "-m", "regression", "--html=reports/regression-report.html", "--self-contained-html", "--json-report", "--json-report-file=reports/regression-report.json", "-v"]
+
+  # All tests
+  all-tests:
+    extends: geotest
+    container_name: geotest-all
+    command: ["pytest", "-v"]
+
+  # Future: Allure service placeholder
+  allure:
+    image: "frankescobar/allure-docker-service"
+    container_name: geotest-allure
+    environment:
+      CHECK_RESULTS_EVERY_SECONDS: 3
+      KEEP_HISTORY: 25
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./allure-results:/app/allure-results
+      - ./allure-reports:/app/default-reports
+    networks:
+      - geotest-network
+    profiles:
+      - allure
+
+networks:
+  geotest-network:
+    driver: bridge
+
+volumes:
+  allure-results:
+  allure-reports:
