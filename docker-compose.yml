@@ -39,6 +39,24 @@ services:
     container_name: geotest-all
     command: ["pytest", "-v"]
 
+  # Critical tests with enhanced alerting
+  critical-tests:
+    extends: geotest
+    container_name: geotest-critical
+    command: ["pytest", "tests/test_countries_api.py", "-m", "critical", "--html=reports/critical-report.html", "--self-contained-html", "--json-report", "--json-report-file=reports/critical-report.json", "-v"]
+
+  # Performance tests with monitoring
+  performance-tests:
+    extends: geotest
+    container_name: geotest-performance
+    command: ["pytest", "tests/test_countries_api.py", "-m", "performance", "--html=reports/performance-report.html", "--self-contained-html", "--json-report", "--json-report-file=reports/performance-report.json", "-v"]
+
+  # Monitoring integration tests
+  monitoring-tests:
+    extends: geotest
+    container_name: geotest-monitoring
+    command: ["pytest", "tests/test_monitoring_integration.py", "--html=reports/monitoring-report.html", "--self-contained-html", "--json-report", "--json-report-file=reports/monitoring-report.json", "-v"]
+
   # Future: Allure service placeholder
   allure:
     image: "frankescobar/allure-docker-service"

@@ -7,6 +7,7 @@ The GeoTest Framework is designed as a scalable, data-driven API testing system 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    GeoTest Framework Architecture               │
+│                        (Phase 4 Complete)                       │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -17,11 +18,20 @@ The GeoTest Framework is designed as a scalable, data-driven API testing system 
 │  │                 │    │                 │    │             │  │
 │  │ • pytest        │    │ • CSV Test Data │    │ • HTML      │  │
 │  │ • Markers       │    │ • Pydantic      │    │ • JSON      │  │
-│  │ • Fixtures      │    │ • Validation    │    │ • Allure    │  │
+│  │ • Fixtures      │    │ • Validation    │    │ • Dashboard │  │
+│  │ • Plugins       │    │ • Test Models   │    │ • Alerts    │  │
 │  └─────────┬───────┘    └─────────┬───────┘    └─────────┬───┘  │
 │            │                      │                      │      │
-│            │                      │                      │      │
-│            └──────────────────────┼──────────────────────┘      │
+│            │        ┌─────────────┴─────────────┐        │      │
+│            └────────┤   Phase 4: Monitoring     ├────────┘      │
+│                     │                           │               │
+│                     │ • Real-time Metrics       │               │
+│                     │ • Alert Management        │               │
+│                     │ • Performance Tracking    │               │
+│                     │ • System Monitoring       │               │
+│                     │ • Interactive Dashboards  │               │
+│                     │ • Notification Channels   │               │
+│                     └─────────────┬─────────────┘               │
 │                                   │                             │
 │                      ┌────────────┴────────────┐                │
 │                      │   Test Framework Core   │                │
@@ -46,8 +56,9 @@ The GeoTest Framework is designed as a scalable, data-driven API testing system 
 
 ### 1. Test Runner Layer
 - **pytest**: Test execution engine with custom configuration
-- **Markers**: smoke, regression, slow, integration, unit
-- **Fixtures**: Data loading, client setup, cleanup
+- **Markers**: smoke, regression, critical, performance, slow, integration, unit
+- **Fixtures**: Data loading, client setup, cleanup, monitoring integration
+- **Plugins**: Monitoring plugin, performance plugin for enhanced tracking
 - **Parameterization**: Data-driven test execution
 
 ### 2. Data Layer (Phase 2)
@@ -62,11 +73,13 @@ The GeoTest Framework is designed as a scalable, data-driven API testing system 
 - **Error Handling**: Graceful failure management
 - **Rate Limiting**: Respectful API usage
 
-### 4. Reporting Layer
+### 4. Reporting Layer (Phase 4 Enhanced)
 - **HTML Reports**: Human-readable test results
 - **JSON Reports**: Machine-readable for CI/CD
-- **Allure Reports**: Advanced reporting with history tracking
-- **Execution Timing**: Performance monitoring
+- **Interactive Dashboards**: Real-time visualization with Chart.js
+- **Alert Reports**: Notification status and history
+- **Performance Metrics**: Detailed timing and resource usage
+- **System Monitoring**: CPU, memory, network, disk metrics
 
 ### 5. External Dependencies
 - **REST Countries API**: Primary data source
@@ -78,15 +91,18 @@ The GeoTest Framework is designed as a scalable, data-driven API testing system 
 ```
 CSV Test Data → Pydantic Validation → Pytest Fixtures → Test Cases
                                                             ↓
-                                                    API Client
+                                               API Client (Monitored)
                                                             ↓
                                                   REST Countries API
                                                             ↓
                                               Response Processing
                                                             ↓
-                                               Assertions & Logging
+                                        Assertions & Logging & Metrics Collection
                                                             ↓
-                                              Test Reports (HTML/JSON)
+                        Alert Processing ← Test Reports (HTML/JSON/Dashboard)
+                                ↓                          ↓
+                        Notifications              System Monitoring
+                    (Email/Slack/Webhook)          (CPU/Memory/Network)
 ```
 
 ## Phase 2 Enhancements
@@ -115,15 +131,54 @@ CSV Test Data → Pydantic Validation → Pytest Fixtures → Test Cases
 ### CI/CD Ready Features
 - **Containerized Execution**: Consistent environments across development/CI
 - **Service Orchestration**: Multiple test configurations via Docker Compose
-- **Report Generation**: HTML, JSON, and Allure output in mounted volumes
-- **Future Allure Service**: Ready for Phase 4 advanced reporting
+- **Report Generation**: HTML, JSON, and enhanced dashboard output in mounted volumes
+- **Monitoring Integration**: Phase 4 monitoring system ready for CI/CD pipelines
+
+## Phase 4: Advanced Monitoring & Reporting (Completed)
+
+### Monitoring Architecture
+- **MetricsCollector**: Thread-safe collection of test, system, API, and custom metrics
+- **AlertManager**: Configurable rule-based alerting with multiple notification channels
+- **DashboardGenerator**: Interactive HTML dashboards with real-time charts
+- **SystemMonitor**: Continuous monitoring of system resources (CPU, memory, disk, network)
+- **Performance Tracking**: Test execution timing and API response monitoring
+
+### Key Components
+1. **Real-time Metrics Collection**
+   - Test execution metrics (duration, status, response times)
+   - System resource monitoring (CPU, memory, network I/O)
+   - API performance tracking (endpoint response times, status codes)
+   - Custom business metrics with tags and metadata
+
+2. **Intelligent Alerting System**
+   - Configurable alert rules with severity levels
+   - Multiple notification channels (Email, Slack, Webhooks)
+   - Alert cooldown periods and automatic resolution
+   - Alert history and analytics
+
+3. **Interactive Dashboards**
+   - Chart.js-powered visualizations
+   - Test execution timelines and trends
+   - System performance graphs
+   - Alert status and history displays
+
+4. **CLI Management Tools**
+   - Monitor CLI for dashboard generation and metrics export
+   - Alert management and resolution commands
+   - Configuration validation and health checks
+   - Continuous monitoring capabilities
+
+### Integration Points
+- **Pytest Plugin Integration**: Seamless monitoring without test code changes
+- **Docker Compose Services**: New monitoring-focused test services (critical-tests, performance-tests, monitoring-tests)
+- **CI/CD Ready**: Metrics export and dashboard generation for build artifacts
+- **Backwards Compatible**: All existing functionality preserved
 
 ## Future Phases Integration
 
-- **Phase 4**: Allure service integration for advanced reporting
 - **Phase 5**: GitHub Issues integration adds automation layer
-- **Phase 6**: Performance testing adds monitoring layer
-- **Phase 7**: Advanced features add chaos/contract testing
+- **Phase 6**: Performance testing builds on Phase 4 monitoring foundation
+- **Phase 7**: Advanced features adds chaos/contract testing with monitoring
 - **Phase 8**: Production polish adds optimization layer
 
-This architecture ensures maintainability, scalability, and professional QA practices throughout all development phases.
+This architecture ensures maintainability, scalability, and professional QA practices throughout all development phases. Phase 4 provides the foundation for advanced monitoring and alerting that will enhance all future phases.

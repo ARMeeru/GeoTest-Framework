@@ -43,6 +43,7 @@ RUN mkdir -p reports .pytest_cache/v/cache allure-results && chown -R geotest:ge
 COPY --chown=geotest:geotest src/ ./src/
 COPY --chown=geotest:geotest tests/ ./tests/
 COPY --chown=geotest:geotest data/ ./data/
+COPY --chown=geotest:geotest config/ ./config/
 COPY --chown=geotest:geotest pytest.ini ./
 
 # Switch to non-root user

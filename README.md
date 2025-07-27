@@ -7,7 +7,7 @@ An API testing framework using REST Countries API that demonstrates modern QA en
 ### Local Python Execution
 
 ```bash
-# Activate virtual environment first
+# Activate virtual environment first after creating and rename myenv below accordingly
 source myenv/bin/activate
 
 # Install/update dependencies
@@ -25,25 +25,50 @@ pytest -m smoke
 # Run regression tests only  
 pytest -m regression
 
-# Run specific test file
-pytest tests/test_countries_api.py
+# Run critical tests only
+pytest -m critical
 
-# Run data-driven tests
-pytest tests/test_data_driven.py
+# Run performance tests
+pytest -m performance
 
-# Generate HTML report
-pytest --html=reports/report.html --self-contained-html
+# Run monitoring integration tests
+pytest tests/test_monitoring_integration.py -v
+```
 
-# Generate JSON report
-pytest --json-report --json-report-file=reports/report.json
+### Phase 4 Monitoring Commands
+
+```bash
+# Run tests with full monitoring enabled
+python scripts/run_tests_with_monitoring.py
+
+# Start system monitoring
+python scripts/monitor.py monitor --duration 30
+
+# Generate monitoring dashboard
+python scripts/monitor.py dashboard
+
+# Show metrics summary
+python scripts/monitor.py summary
+
+# Check recent alerts
+python scripts/monitor.py alerts
+
+# Export metrics data
+python scripts/monitor.py export
+
+# Validate alert configuration
+python scripts/monitor.py check-config
+
+# Test notification channels
+python scripts/monitor.py test-notifications
+
+# View monitoring CLI help
+python scripts/monitor.py --help
 ```
 
 ### Docker Execution
 
 ```bash
-# Build Docker image
-docker build -t geotest-framework .
-
 # Run smoke tests in container
 docker compose run --rm smoke-tests
 
@@ -53,22 +78,24 @@ docker compose run --rm regression-tests
 # Run all tests in container
 docker compose run --rm all-tests
 
-# Run specific test with Docker
-docker run --rm -v $(pwd)/reports:/app/reports geotest-framework pytest -m smoke
+# Run critical tests with enhanced alerting
+docker compose run --rm critical-tests
+
+# Run performance tests with monitoring
+docker compose run --rm performance-tests
+
+# Run monitoring integration tests
+docker compose run --rm monitoring-tests
 ```
 
-### Advanced Options
 
-```bash
-# Run tests with coverage
-pytest --cov=src --cov-report=html
+## Architecture Overview
 
-# Run with timing information
-pytest --durations=10
+The GeoTest Framework implements a 4-phase architecture:
 
-# Run with custom markers
-pytest -m "smoke or regression"
+- **Phase 1**: Foundation with fast feedback (basic tests, CI/CD, Docker)
+- **Phase 2**: Data-driven testing (CSV data, parameterized tests, models)
+- **Phase 3**: Containerization and CI/CD (Docker Compose, Allure, health checks)
+- **Phase 4**: Advanced monitoring & reporting (metrics, alerts, dashboards)
 
-# Run and generate all reports
-pytest --html=reports/report.html --json-report --json-report-file=reports/report.json -v
-```
+Each phase builds upon the previous, creating a comprehensive testing platform suitable for enterprise environments.

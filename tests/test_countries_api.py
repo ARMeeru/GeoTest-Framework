@@ -201,3 +201,64 @@ class TestRestCountriesAPI:
         assert country['name']['common'] == "Canada", \
             f"Intentional failure: Expected 'Canada' but got '{country['name']['common']}'. " \
             "This test is designed to fail to validate error reporting mechanisms."
+    
+    @pytest.mark.critical
+    def test_critical_alpha_code_lookup(self, api_client):
+        # Critical test for alpha code lookup - fundamental API functionality
+        country = api_client.get_country_by_code("US")[0]
+        
+        # Critical assertions that must always pass
+        assert country['cca2'] == "US"
+        assert country['name']['common'] == "United States"
+        assert 'currencies' in country
+        assert 'USD' in country['currencies']
+    
+    @pytest.mark.critical
+    def test_critical_currency_validation(self, api_client):
+        # Critical test for USD currency countries
+        countries = api_client.get_countries_by_currency("USD")
+        
+        # Critical business logic - USD must have multiple countries
+        assert len(countries) >= 10, "USD should be used by multiple countries"
+        
+        # Verify US is always included
+        us_found = any(c['cca2'] == 'US' for c in countries)
+        assert us_found, "United States must be in USD currency list"
+    
+    @pytest.mark.performance
+    def test_performance_all_countries_response_time(self, api_client):
+        # Performance test for all countries endpoint
+        import time
+        
+        start_time = time.time()
+        countries = api_client.get_all_countries(fields="name,cca2,region")
+        end_time = time.time()
+        
+        response_time = end_time - start_time
+        
+        # Performance assertions
+        assert response_time < 2.0, f"All countries endpoint too slow: {response_time:.2f}s"
+        assert len(countries) >= 200, "Should return substantial number of countries"
+    
+    @pytest.mark.performance  
+    def test_performance_region_lookup_efficiency(self, api_client):
+        # Performance test for region-based lookups
+        import time
+        
+        regions = ["Europe", "Asia", "Americas"]
+        total_time = 0
+        
+        for region in regions:
+            start_time = time.time()
+            countries = api_client.get_countries_by_region(region)
+            end_time = time.time()
+            
+            region_time = end_time - start_time
+            total_time += region_time
+            
+            # Each region should respond quickly
+            assert region_time < 1.0, f"Region {region} lookup too slow: {region_time:.2f}s"
+            assert len(countries) > 5, f"Region {region} should have multiple countries"
+        
+        # Total time for all regions should be reasonable
+        assert total_time < 3.0, f"Total region lookup time too slow: {total_time:.2f}s"
