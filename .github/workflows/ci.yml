@@ -9,6 +9,12 @@ on:
     # Daily regression runs at 02:00 UTC
     - cron: '0 2 * * *'
 
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+  security-events: write
+
 jobs:
   # Smoke tests - Quick validation
   smoke-tests:
@@ -55,30 +61,41 @@ jobs:
         script: |
           const fs = require('fs');
           try {
+            // Check if we have pull request context
+            if (!context.issue || !context.issue.number) {
+              console.log('No pull request context available');
+              return;
+            }
+            
             const reportPath = 'reports/smoke-report.json';
+            let body = '## Smoke Test Results\n\n';
+            
             if (fs.existsSync(reportPath)) {
               const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
               const summary = report.summary || {};
               const status = summary.failed > 0 ? '❌ FAILED' : '✅ PASSED';
-              const body = `## Smoke Test Results ${status}
-              
-              **Summary:**
-              - Passed: ${summary.passed || 0}
-              - Failed: ${summary.failed || 0}  
-              - Total: ${summary.total || 0}
-              - Duration: ${report.duration || 'N/A'}s
-              
-              View detailed results in the [artifacts](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}).`;
-              
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: body
-              });
+              body += `**Status:** ${status}\n\n`;
+              body += `**Summary:**\n`;
+              body += `- Passed: ${summary.passed || 0}\n`;
+              body += `- Failed: ${summary.failed || 0}\n`;
+              body += `- Total: ${summary.total || 0}\n`;
+              body += `- Duration: ${report.duration || 'N/A'}s\n\n`;
+              body += `View detailed results in the [artifacts](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}).`;
+            } else {
+              body += '❌ No test report found. Check the workflow logs for details.';
             }
+              
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+            
+            console.log('Successfully posted PR comment');
           } catch (error) {
-            console.log('Could not post smoke test results:', error);
+            console.log('Could not post smoke test results:', error.message);
+            console.log('Error details:', error);
           }
 
   # Regression tests - Comprehensive validation
