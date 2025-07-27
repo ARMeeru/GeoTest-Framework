@@ -27,6 +27,21 @@ services:
     container_name: geotest-smoke
     command: ["pytest", "-m", "smoke", "--html=reports/smoke-report.html", "--self-contained-html", "--json-report", "--json-report-file=reports/smoke-report.json", "-v", "--tb=short"]
 
+  # CI-specific smoke tests without volume mount
+  smoke-tests-ci:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: geotest-smoke-ci
+    environment:
+      - PYTHONPATH=/app
+      - PYTEST_CURRENT_TEST=1
+      - PYTHONWARNINGS=ignore::pytest.PytestCacheWarning
+    networks:
+      - geotest-network
+    command: ["pytest", "-m", "smoke", "--html=/app/reports/smoke-report.html", "--self-contained-html", "--json-report", "--json-report-file=/app/reports/smoke-report.json", "-v", "--tb=short"]
+
   # Regression tests - comprehensive suite
   regression-tests:
     extends: geotest

@@ -24,11 +24,20 @@ jobs:
     
     - name: Build test image
       run: |
-        docker compose build geotest
+        docker compose build smoke-tests-ci
     
-    - name: Run smoke tests
+    - name: Run smoke tests and extract reports
       run: |
-        docker compose run --rm smoke-tests
+        # Run tests without auto-removal to keep container for report extraction
+        container_id=$(docker compose run -d smoke-tests-ci)
+        # Wait for tests to complete
+        docker wait $container_id || true
+        # Copy reports from the finished container
+        docker cp $container_id:/app/reports ./reports || echo "No reports found in container"
+        # Clean up the container
+        docker rm $container_id || true
+        # List what we extracted
+        ls -la reports/ || echo "No reports directory created"
     
     - name: Upload smoke test results
       uses: actions/upload-artifact@v4
