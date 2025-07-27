@@ -1,20 +1,48 @@
-# Pytest configuration and fixtures for data-driven testing
-# Provides reusable test data and client setup
+# Global pytest configuration with integrated monitoring and data-driven testing
+# Consolidates Phase 2 data-driven fixtures with Phase 4 monitoring integration
 
+import sys
 import pytest
 import csv
 import json
 import logging
+import time
 from pathlib import Path
 from typing import List, Dict, Any, Iterator
+
+# Ensure src is in Python path
+src_path = Path(__file__).parent / "src"
+if str(src_path) not in sys.path:
+    sys.path.insert(0, str(src_path))
+
+# Core imports
 from src.api_client import RestCountriesClient
 from src.models import ScenarioData, CountryData, TestResult, validate_test_scenario
 
+# Phase 4: Import monitoring components
+try:
+    from src.monitoring import get_metrics_collector
+    from src.alerting import get_alert_manager
+    from src.pytest_plugins import (
+        pytest_configure,
+        pytest_unconfigure,
+        MonitoringPlugin,
+        PerformancePlugin
+    )
+    MONITORING_AVAILABLE = True
+except ImportError:
+    MONITORING_AVAILABLE = False
 
-# Configure logging for test fixtures
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Make fixtures available globally
+pytest_plugins = []
+
+# ============================================================================
+# PHASE 2: DATA-DRIVEN TESTING FIXTURES
+# ============================================================================
 
 @pytest.fixture(scope="session")
 def api_client() -> Iterator[RestCountriesClient]:
@@ -29,7 +57,7 @@ def api_client() -> Iterator[RestCountriesClient]:
 @pytest.fixture(scope="session")
 def test_data_dir() -> Path:
     # Path to test data directory
-    return Path(__file__).parent.parent / "data"
+    return Path(__file__).parent / "data"
 
 
 @pytest.fixture(scope="session")
@@ -82,9 +110,9 @@ def sample_countries(test_data_dir: Path) -> List[Dict[str, str]]:
         return []
 
 
+# Scenario filter fixtures
 @pytest.fixture
 def smoke_scenarios(test_scenarios: List[ScenarioData]) -> List[ScenarioData]:
-    # Filter scenarios for smoke testing
     smoke_tests = [s for s in test_scenarios if 'smoke' in (s.tags or '')]
     logger.info(f"Filtered {len(smoke_tests)} smoke test scenarios")
     return smoke_tests
@@ -92,7 +120,6 @@ def smoke_scenarios(test_scenarios: List[ScenarioData]) -> List[ScenarioData]:
 
 @pytest.fixture
 def regression_scenarios(test_scenarios: List[ScenarioData]) -> List[ScenarioData]:
-    # Filter scenarios for regression testing
     regression_tests = [s for s in test_scenarios if 'regression' in (s.tags or '')]
     logger.info(f"Filtered {len(regression_tests)} regression test scenarios")
     return regression_tests
@@ -100,7 +127,6 @@ def regression_scenarios(test_scenarios: List[ScenarioData]) -> List[ScenarioDat
 
 @pytest.fixture
 def positive_scenarios(test_scenarios: List[ScenarioData]) -> List[ScenarioData]:
-    # Filter positive test scenarios
     positive_tests = [s for s in test_scenarios if s.test_type == 'positive']
     logger.info(f"Filtered {len(positive_tests)} positive test scenarios")
     return positive_tests
@@ -108,7 +134,6 @@ def positive_scenarios(test_scenarios: List[ScenarioData]) -> List[ScenarioData]
 
 @pytest.fixture
 def negative_scenarios(test_scenarios: List[ScenarioData]) -> List[ScenarioData]:
-    # Filter negative test scenarios
     negative_tests = [s for s in test_scenarios if s.test_type == 'negative']
     logger.info(f"Filtered {len(negative_tests)} negative test scenarios")
     return negative_tests
@@ -116,7 +141,6 @@ def negative_scenarios(test_scenarios: List[ScenarioData]) -> List[ScenarioData]
 
 @pytest.fixture
 def edge_case_scenarios(test_scenarios: List[ScenarioData]) -> List[ScenarioData]:
-    # Filter edge case test scenarios
     edge_cases = [s for s in test_scenarios if s.test_type == 'edge_case']
     logger.info(f"Filtered {len(edge_cases)} edge case test scenarios")
     return edge_cases
@@ -124,7 +148,6 @@ def edge_case_scenarios(test_scenarios: List[ScenarioData]) -> List[ScenarioData
 
 @pytest.fixture
 def security_scenarios(test_scenarios: List[ScenarioData]) -> List[ScenarioData]:
-    # Filter security test scenarios
     security_tests = [s for s in test_scenarios if 'security' in (s.tags or '')]
     logger.info(f"Filtered {len(security_tests)} security test scenarios")
     return security_tests
@@ -132,11 +155,14 @@ def security_scenarios(test_scenarios: List[ScenarioData]) -> List[ScenarioData]
 
 @pytest.fixture
 def high_priority_scenarios(test_scenarios: List[ScenarioData]) -> List[ScenarioData]:
-    # Filter high priority test scenarios
     high_priority = [s for s in test_scenarios if s.priority == 'high']
     logger.info(f"Filtered {len(high_priority)} high priority test scenarios")
     return high_priority
 
+
+# ============================================================================
+# DEBUGGING AND TRACKING FIXTURES
+# ============================================================================
 
 @pytest.fixture
 def request_response_capture():
@@ -145,7 +171,6 @@ def request_response_capture():
     
     def capture(test_id: str, request_url: str, response_status: int, 
                 response_time: float, response_data: Any = None, error: str = None):
-        # Capture request/response information
         capture_entry = {
             'test_id': test_id,
             'request_url': request_url,
@@ -158,13 +183,12 @@ def request_response_capture():
         captured_data.append(capture_entry)
         logger.debug(f"Captured request/response for {test_id}")
     
-    # Provide capture function to tests
     yield capture
     
     # Save captured data after test session
     if captured_data:
         try:
-            reports_dir = Path(__file__).parent.parent / "reports"
+            reports_dir = Path(__file__).parent / "reports"
             reports_dir.mkdir(exist_ok=True)
             
             capture_file = reports_dir / "request_response_capture.json"
@@ -184,7 +208,6 @@ def test_result_tracker():
     def track_result(test_id: str, status: str, execution_time: float,
                     request_url: str = None, response_status: int = None,
                     response_time: float = None, error_message: str = None):
-        # Track test execution results
         result = TestResult(
             test_id=test_id,
             status=status,
@@ -197,16 +220,14 @@ def test_result_tracker():
         test_results.append(result)
         logger.debug(f"Tracked result for {test_id}: {status}")
     
-    # Provide tracking function to tests
     yield track_result
     
     # Generate summary report after test session
     if test_results:
         try:
-            reports_dir = Path(__file__).parent.parent / "reports"
+            reports_dir = Path(__file__).parent / "reports"
             reports_dir.mkdir(exist_ok=True)
             
-            # Calculate summary statistics
             total_tests = len(test_results)
             passed_tests = len([r for r in test_results if r.status == 'passed'])
             failed_tests = len([r for r in test_results if r.status == 'failed'])
@@ -233,10 +254,7 @@ def test_result_tracker():
 @pytest.fixture(autouse=True)
 def test_timer():
     # Automatic fixture to time each test
-    import time
     start_time = time.time()
-    
-    # Set current timestamp for other fixtures
     pytest.current_timestamp = start_time
     
     yield
@@ -246,7 +264,82 @@ def test_timer():
     logger.debug(f"Test execution time: {execution_time:.3f}s")
 
 
-# Parametrize helpers for data-driven testing
+# ============================================================================
+# PHASE 4: MONITORING INTEGRATION FIXTURES
+# ============================================================================
+
+@pytest.fixture(scope="session")
+def metrics_collector():
+    # Metrics collector fixture for monitoring integration
+    if not MONITORING_AVAILABLE:
+        pytest.skip("Monitoring components not available")
+    
+    collector = get_metrics_collector()
+    logger.info("Metrics collector initialized for test session")
+    yield collector
+    
+    # Export metrics after session
+    try:
+        collector.export_metrics()
+        logger.info("Metrics exported after test session")
+    except Exception as e:
+        logger.warning(f"Failed to export metrics: {e}")
+
+
+@pytest.fixture(scope="session") 
+def alert_manager():
+    # Alert manager fixture for monitoring integration
+    if not MONITORING_AVAILABLE:
+        pytest.skip("Monitoring components not available")
+    
+    manager = get_alert_manager()
+    logger.info("Alert manager initialized for test session")
+    yield manager
+
+
+@pytest.fixture
+def performance_tracker(metrics_collector):
+    # Performance tracker fixture for performance tests
+    if not MONITORING_AVAILABLE:
+        pytest.skip("Monitoring components not available")
+    
+    def track_performance(operation_name: str, operation_func, **tags):
+        start_time = time.time()
+        
+        try:
+            result = operation_func()
+            end_time = time.time()
+            duration = end_time - start_time
+            
+            metrics_collector.record_custom_metric(
+                f"performance.{operation_name}",
+                duration,
+                tags=tags
+            )
+            
+            logger.debug(f"Performance tracked for {operation_name}: {duration:.3f}s")
+            return result
+            
+        except Exception as e:
+            end_time = time.time()
+            duration = end_time - start_time
+            
+            metrics_collector.record_custom_metric(
+                f"performance.{operation_name}.failed",
+                duration,
+                tags={**tags, "error": str(e)[:100]}
+            )
+            
+            logger.error(f"Performance tracking failed for {operation_name}: {e}")
+            raise
+    
+    return track_performance
+
+
+# ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
+
 def get_country_test_data(countries: List[Dict[str, str]], max_count: int = 30) -> List[Dict[str, str]]:
     # Get subset of countries for parameterized testing
     return countries[:max_count]

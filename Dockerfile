@@ -43,7 +43,13 @@ RUN mkdir -p reports .pytest_cache/v/cache allure-results && chown -R geotest:ge
 COPY --chown=geotest:geotest src/ ./src/
 COPY --chown=geotest:geotest tests/ ./tests/
 COPY --chown=geotest:geotest data/ ./data/
+COPY --chown=geotest:geotest conftest.py ./
 COPY --chown=geotest:geotest pytest.ini ./
+
+# Create config directory and add default alerting configuration
+RUN mkdir -p config && \
+    echo '{"alert_rules":[],"notification_channels":[]}' > config/alerting.json && \
+    chown -R geotest:geotest config
 
 # Switch to non-root user
 USER geotest
