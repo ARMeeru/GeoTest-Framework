@@ -114,11 +114,20 @@ jobs:
     
     - name: Build test image
       run: |
-        docker compose build geotest
+        docker compose build regression-tests-ci
     
-    - name: Run regression tests
+    - name: Run regression tests and extract reports
       run: |
-        docker compose run --rm regression-tests
+        # Run tests without auto-removal to keep container for report extraction
+        container_id=$(docker compose run -d regression-tests-ci)
+        # Wait for tests to complete
+        docker wait $container_id || true
+        # Copy reports from the finished container
+        docker cp $container_id:/app/reports ./reports || echo "No reports found in container"
+        # Clean up the container
+        docker rm $container_id || true
+        # List what we extracted
+        ls -la reports/ || echo "No reports directory created"
     
     - name: Upload regression test results
       uses: actions/upload-artifact@v4
@@ -143,18 +152,27 @@ jobs:
     
     - name: Build test image
       run: |
-        docker compose build geotest
+        docker compose build all-tests-ci
     
-    - name: Run all tests
+    - name: Run all tests and extract reports
       run: |
-        docker compose run --rm all-tests
+        # Run tests without auto-removal to keep container for report extraction
+        container_id=$(docker compose run -d all-tests-ci)
+        # Wait for tests to complete
+        docker wait $container_id || true
+        # Copy reports from the finished container
+        docker cp $container_id:/app/reports ./reports || echo "No reports found in container"
+        # Clean up the container
+        docker rm $container_id || true
+        # List what we extracted
+        ls -la reports/ || echo "No reports directory created"
     
     - name: Upload full test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: full-test-results
-        path: reports/full-*
+        path: reports/all-*
         retention-days: 30
     
     - name: Check image size
