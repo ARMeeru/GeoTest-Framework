@@ -15,7 +15,13 @@ services:
     networks:
       - geotest-network
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('https://restcountries.com/v3.1/all', timeout=5)"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import requests; requests.get('https://restcountries.com/v3.1/all', timeout=5)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -25,7 +31,18 @@ services:
   smoke-tests:
     extends: geotest
     container_name: geotest-smoke
-    command: ["pytest", "-m", "smoke", "--html=reports/smoke-report.html", "--self-contained-html", "--json-report", "--json-report-file=reports/smoke-report.json", "-v", "--tb=short"]
+    command:
+      [
+        "pytest",
+        "-m",
+        "smoke",
+        "--html=reports/smoke-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=reports/smoke-report.json",
+        "-v",
+        "--tb=short",
+      ]
 
   # CI-specific smoke tests without volume mount
   smoke-tests-ci:
@@ -40,7 +57,18 @@ services:
       - PYTHONWARNINGS=ignore::pytest.PytestCacheWarning
     networks:
       - geotest-network
-    command: ["pytest", "-m", "smoke", "--html=/app/reports/smoke-report.html", "--self-contained-html", "--json-report", "--json-report-file=/app/reports/smoke-report.json", "-v", "--tb=short"]
+    command:
+      [
+        "pytest",
+        "-m",
+        "smoke",
+        "--html=/app/reports/smoke-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=/app/reports/smoke-report.json",
+        "-v",
+        "--tb=short",
+      ]
 
   # CI-specific regression tests without volume mount
   regression-tests-ci:
@@ -55,7 +83,17 @@ services:
       - PYTHONWARNINGS=ignore::pytest.PytestCacheWarning
     networks:
       - geotest-network
-    command: ["pytest", "-m", "regression", "--html=/app/reports/regression-report.html", "--self-contained-html", "--json-report", "--json-report-file=/app/reports/regression-report.json", "-v"]
+    command:
+      [
+        "pytest",
+        "-m",
+        "regression",
+        "--html=/app/reports/regression-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=/app/reports/regression-report.json",
+        "-v",
+      ]
 
   # CI-specific all tests without volume mount
   all-tests-ci:
@@ -70,13 +108,31 @@ services:
       - PYTHONWARNINGS=ignore::pytest.PytestCacheWarning
     networks:
       - geotest-network
-    command: ["pytest", "--html=/app/reports/all-report.html", "--self-contained-html", "--json-report", "--json-report-file=/app/reports/all-report.json", "-v"]
+    command:
+      [
+        "pytest",
+        "--html=/app/reports/all-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=/app/reports/all-report.json",
+        "-v",
+      ]
 
   # Regression tests - comprehensive suite
   regression-tests:
     extends: geotest
     container_name: geotest-regression
-    command: ["pytest", "-m", "regression", "--html=reports/regression-report.html", "--self-contained-html", "--json-report", "--json-report-file=reports/regression-report.json", "-v"]
+    command:
+      [
+        "pytest",
+        "-m",
+        "regression",
+        "--html=reports/regression-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=reports/regression-report.json",
+        "-v",
+      ]
 
   # All tests
   all-tests:
@@ -88,19 +144,311 @@ services:
   critical-tests:
     extends: geotest
     container_name: geotest-critical
-    command: ["pytest", "tests/test_countries_api.py", "-m", "critical", "--html=reports/critical-report.html", "--self-contained-html", "--json-report", "--json-report-file=reports/critical-report.json", "-v"]
+    command:
+      [
+        "pytest",
+        "tests/test_countries_api.py",
+        "-m",
+        "critical",
+        "--html=reports/critical-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=reports/critical-report.json",
+        "-v",
+      ]
 
-  # Performance tests with monitoring
+  # Performance tests with monitoring (Phase 4)
   performance-tests:
     extends: geotest
     container_name: geotest-performance
-    command: ["pytest", "tests/test_countries_api.py", "-m", "performance", "--html=reports/performance-report.html", "--self-contained-html", "--json-report", "--json-report-file=reports/performance-report.json", "-v"]
+    command:
+      [
+        "pytest",
+        "tests/test_countries_api.py",
+        "-m",
+        "performance",
+        "--html=reports/performance-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=reports/performance-report.json",
+        "-v",
+      ]
+
+  # Phase 5: Load testing with concurrent users
+  load-tests:
+    extends: geotest
+    container_name: geotest-load
+    volumes:
+      - ./reports:/app/reports
+      - ./performance_analysis:/app/performance_analysis
+      - ./performance_baseline:/app/performance_baseline
+    environment:
+      - PYTHONPATH=/app
+      - PYTEST_CURRENT_TEST=1
+      - PYTHONWARNINGS=ignore::pytest.PytestCacheWarning
+      - PERFORMANCE_TEST_TYPE=load
+    command:
+      [
+        "pytest",
+        "tests/test_load_performance.py",
+        "-m",
+        "load_test",
+        "--html=reports/load-test-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=reports/load-test-report.json",
+        "-v",
+        "--tb=short",
+      ]
+
+  # Phase 5: Stress testing for breaking point analysis
+  stress-tests:
+    extends: geotest
+    container_name: geotest-stress
+    volumes:
+      - ./reports:/app/reports
+      - ./performance_analysis:/app/performance_analysis
+    environment:
+      - PYTHONPATH=/app
+      - PYTEST_CURRENT_TEST=1
+      - PYTHONWARNINGS=ignore::pytest.PytestCacheWarning
+      - PERFORMANCE_TEST_TYPE=stress
+    command:
+      [
+        "pytest",
+        "tests/test_stress_performance.py",
+        "-m",
+        "stress_test",
+        "--html=reports/stress-test-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=reports/stress-test-report.json",
+        "-v",
+        "--tb=short",
+      ]
+
+  # Phase 5: Benchmark testing for regression detection
+  benchmark-tests:
+    extends: geotest
+    container_name: geotest-benchmark
+    volumes:
+      - ./reports:/app/reports
+      - ./performance_analysis:/app/performance_analysis
+      - ./performance_baseline:/app/performance_baseline
+    environment:
+      - PYTHONPATH=/app
+      - PYTEST_CURRENT_TEST=1
+      - PYTHONWARNINGS=ignore::pytest.PytestCacheWarning
+      - PERFORMANCE_TEST_TYPE=benchmark
+    command:
+      [
+        "pytest",
+        "tests/test_benchmark_performance.py",
+        "-m",
+        "benchmark",
+        "--html=reports/benchmark-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=reports/benchmark-report.json",
+        "-v",
+        "--tb=short",
+      ]
+
+  # Phase 5: Light load testing for quick validation
+  light-load-tests:
+    extends: geotest
+    container_name: geotest-light-load
+    volumes:
+      - ./reports:/app/reports
+      - ./performance_analysis:/app/performance_analysis
+    environment:
+      - PYTHONPATH=/app
+      - PYTEST_CURRENT_TEST=1
+      - PYTHONWARNINGS=ignore::pytest.PytestCacheWarning
+      - PERFORMANCE_TEST_TYPE=light_load
+    command:
+      [
+        "pytest",
+        "tests/test_load_performance.py::TestLoadPerformance::test_light_load_performance",
+        "--html=reports/light-load-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=reports/light-load-report.json",
+        "-v",
+      ]
+
+  # Phase 5: Heavy load testing for capacity analysis
+  heavy-load-tests:
+    extends: geotest
+    container_name: geotest-heavy-load
+    volumes:
+      - ./reports:/app/reports
+      - ./performance_analysis:/app/performance_analysis
+    environment:
+      - PYTHONPATH=/app
+      - PYTEST_CURRENT_TEST=1
+      - PYTHONWARNINGS=ignore::pytest.PytestCacheWarning
+      - PERFORMANCE_TEST_TYPE=heavy_load
+    command:
+      [
+        "pytest",
+        "tests/test_load_performance.py",
+        "-m",
+        "heavy",
+        "--html=reports/heavy-load-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=reports/heavy-load-report.json",
+        "-v",
+        "--maxfail=3",
+      ]
+
+  # Phase 5: Async load testing
+  async-load-tests:
+    extends: geotest
+    container_name: geotest-async-load
+    volumes:
+      - ./reports:/app/reports
+      - ./performance_analysis:/app/performance_analysis
+    environment:
+      - PYTHONPATH=/app
+      - PYTEST_CURRENT_TEST=1
+      - PYTHONWARNINGS=ignore::pytest.PytestCacheWarning
+      - PERFORMANCE_TEST_TYPE=async_load
+    command:
+      [
+        "pytest",
+        "tests/test_load_performance.py",
+        "-m",
+        "async_test",
+        "--html=reports/async-load-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=reports/async-load-report.json",
+        "-v",
+      ]
+
+  # Phase 5: Endurance stress testing
+  endurance-tests:
+    extends: geotest
+    container_name: geotest-endurance
+    volumes:
+      - ./reports:/app/reports
+      - ./performance_analysis:/app/performance_analysis
+    environment:
+      - PYTHONPATH=/app
+      - PYTEST_CURRENT_TEST=1
+      - PYTHONWARNINGS=ignore::pytest.PytestCacheWarning
+      - PERFORMANCE_TEST_TYPE=endurance
+    command:
+      [
+        "pytest",
+        "tests/test_stress_performance.py",
+        "-m",
+        "endurance",
+        "--html=reports/endurance-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=reports/endurance-report.json",
+        "-v",
+        "--tb=line",
+      ]
 
   # Monitoring integration tests
   monitoring-tests:
     extends: geotest
     container_name: geotest-monitoring
-    command: ["pytest", "tests/test_monitoring_integration.py", "--html=reports/monitoring-report.html", "--self-contained-html", "--json-report", "--json-report-file=reports/monitoring-report.json", "-v"]
+    command:
+      [
+        "pytest",
+        "tests/test_monitoring_integration.py",
+        "--html=reports/monitoring-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=reports/monitoring-report.json",
+        "-v",
+      ]
+
+  # Phase 5: Bug tracking integration tests
+  bug-tracking-tests:
+    extends: geotest
+    container_name: geotest-bug-tracking
+    volumes:
+      - ./reports:/app/reports
+      - ./failure_reports:/app/failure_reports
+      - ./performance_baseline:/app/performance_baseline
+    environment:
+      - PYTHONPATH=/app
+      - PYTEST_CURRENT_TEST=1
+      - PYTHONWARNINGS=ignore::pytest.PytestCacheWarning
+      - BUG_TRACKING_TEST_MODE=1
+    command:
+      [
+        "pytest",
+        "tests/test_bug_tracking.py",
+        "--html=reports/bug-tracking-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=reports/bug-tracking-report.json",
+        "-v",
+        "--tb=short",
+      ]
+
+  # Phase 5: Integration test with failure analysis
+  failure-analysis-tests:
+    extends: geotest
+    container_name: geotest-failure-analysis
+    volumes:
+      - ./reports:/app/reports
+      - ./failure_reports:/app/failure_reports
+      - ./failure_history.json:/app/failure_history.json
+    environment:
+      - PYTHONPATH=/app
+      - PYTEST_CURRENT_TEST=1
+      - PYTHONWARNINGS=ignore::pytest.PytestCacheWarning
+      - ENABLE_FAILURE_TRACKING=1
+    command:
+      [
+        "pytest",
+        "tests/test_countries_api.py",
+        "-m",
+        "critical",
+        "--html=reports/failure-analysis-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=reports/failure-analysis-report.json",
+        "-v",
+        "--tb=long",
+      ]
+
+  # Phase 5: Comprehensive system test with all phases
+  full-system-tests:
+    extends: geotest
+    container_name: geotest-full-system
+    volumes:
+      - ./reports:/app/reports
+      - ./failure_reports:/app/failure_reports
+      - ./performance_analysis:/app/performance_analysis
+      - ./performance_baseline:/app/performance_baseline
+    environment:
+      - PYTHONPATH=/app
+      - PYTEST_CURRENT_TEST=1
+      - PYTHONWARNINGS=ignore::pytest.PytestCacheWarning
+      - ENABLE_FAILURE_TRACKING=1
+      - ENABLE_PERFORMANCE_TRACKING=1
+      - GENERATE_COMPREHENSIVE_REPORTS=1
+    command:
+      [
+        "pytest",
+        "tests/",
+        "-v",
+        "--html=reports/full-system-report.html",
+        "--self-contained-html",
+        "--json-report",
+        "--json-report-file=reports/full-system-report.json",
+        "--tb=short",
+        "--maxfail=10",
+      ]
 
   # Future: Allure service placeholder
   allure:

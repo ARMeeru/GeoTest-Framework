@@ -7,7 +7,7 @@ The GeoTest Framework is designed as a scalable, data-driven API testing system 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    GeoTest Framework Architecture               │
-│                        (Phase 4 Complete)                       │
+│                        (Phase 6 Complete)                       │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -23,11 +23,16 @@ The GeoTest Framework is designed as a scalable, data-driven API testing system 
 │  └─────────┬───────┘    └─────────┬───────┘    └─────────┬───┘  │
 │            │                      │                      │      │
 │            │        ┌─────────────┴─────────────┐        │      │
-│            └────────┤   Phase 4: Monitoring     ├────────┘      │
+│            └────────┤ Phase 4: Monitoring       ├────────┘      │
+│                     │ Phase 5: Bug Tracking     │               │
+│                     │ Phase 6: Performance      │               │
 │                     │                           │               │
 │                     │ • Real-time Metrics       │               │
 │                     │ • Alert Management        │               │
-│                     │ • Performance Tracking    │               │
+│                     │ • GitHub Issues API       │               │
+│                     │ • Intelligent Bug Tracking│               │
+│                     │ • Performance Testing     │               │
+│                     │ • Load & Stress Testing   │               │
 │                     │ • System Monitoring       │               │
 │                     │ • Interactive Dashboards  │               │
 │                     │ • Notification Channels   │               │
@@ -56,9 +61,9 @@ The GeoTest Framework is designed as a scalable, data-driven API testing system 
 
 ### 1. Test Runner Layer
 - **pytest**: Test execution engine with custom configuration
-- **Markers**: smoke, regression, critical, performance, slow, integration, unit
-- **Fixtures**: Data loading, client setup, cleanup, monitoring integration
-- **Plugins**: Monitoring plugin, performance plugin for enhanced tracking
+- **Markers**: smoke, regression, critical, performance, slow, integration, unit, bug_tracking, failure_analysis, retry_logic, flaky_detection, github_integration, load_testing, stress_testing, benchmark, async_stress
+- **Fixtures**: Data loading, client setup, cleanup, monitoring integration, bug tracking setup
+- **Plugins**: Monitoring plugin, bug tracking plugin, performance plugin for enhanced tracking
 - **Parameterization**: Data-driven test execution
 
 ### 2. Data Layer (Phase 2)
@@ -174,11 +179,89 @@ CSV Test Data → Pydantic Validation → Pytest Fixtures → Test Cases
 - **CI/CD Ready**: Metrics export and dashboard generation for build artifacts
 - **Backwards Compatible**: All existing functionality preserved
 
+## Phase 5: Intelligent Bug Tracking (Completed)
+
+### Bug Tracking Architecture
+- **SmartBugTracker**: GitHub Issues API integration with intelligent safeguards
+- **FailureAnalyzer**: Automatic failure categorization with 9 distinct failure types
+- **RetryManager**: Context-aware retry mechanisms with exponential backoff
+- **FailureReports**: MTTR tracking and comprehensive failure analysis
+
+### Key Components
+1. **GitHub Integration Safety**
+   - Consecutive failure threshold (3 failures before issue creation)
+   - Daily issue creation limits (max 5 issues per day)
+   - Dry-run mode for testing without creating actual issues
+   - API rate limiting and error handling
+
+2. **Intelligent Failure Analysis**
+   - 9 failure categories: API_ERROR, NETWORK_ERROR, ASSERTION_ERROR, DATA_ERROR, TIMEOUT_ERROR, AUTH_ERROR, RATE_LIMIT_ERROR, SERVER_ERROR, UNKNOWN_ERROR
+   - Confidence scoring for failure classification
+   - Root cause hint generation
+   - Flaky test detection with pass rate analysis
+
+3. **Smart Retry System**
+   - Category-specific retry configurations
+   - Exponential backoff with jitter
+   - Skip retry for assertion failures and data errors
+   - Configurable retry limits and delays
+
+4. **Enhanced Reporting**
+   - MTTR (Mean Time To Resolution) tracking
+   - Failure pattern analysis
+   - Statistical reports with trends
+   - Integration with existing monitoring system
+
+### CLI Integration
+- **Bug Tracking Commands**: `python scripts/monitor.py bug-tracking <command>`
+  - `health-check`: System health and configuration status
+  - `analyze-failures`: Recent failure analysis and categorization
+  - `flaky-tests`: Identify tests with inconsistent behavior
+  - `retry-stats`: Retry mechanism effectiveness analysis
+  - `export-failures`: Export failure data for external analysis
+
+## Phase 6: Performance Testing (Completed)
+
+### Performance Testing Architecture
+- **Load Testing**: Concurrent user simulation with configurable parameters
+- **Stress Testing**: Resource limit testing and breaking point identification
+- **Benchmark Testing**: Performance baseline establishment and comparison
+- **Async Testing**: High-concurrency scenarios with asyncio and aiohttp
+
+### Key Components
+1. **Load Testing Engine**
+   - Configurable concurrent users (10-100+ simultaneous requests)
+   - Duration-based and iteration-based testing
+   - Request rate throttling to prevent API abuse
+   - Real-time performance metrics collection
+
+2. **Stress Testing Framework**
+   - Progressive load increase to find breaking points
+   - Resource exhaustion testing
+   - Error rate monitoring under stress
+   - Recovery time measurement
+
+3. **Benchmark Suite**
+   - Performance baseline establishment for all API endpoints
+   - Comparative analysis between different endpoints
+   - Statistical analysis with confidence intervals
+   - Performance regression detection
+
+4. **Safe Load Testing**
+   - Built-in rate limiting to respect API constraints
+   - Automatic throttling when error rates increase
+   - Configurable safety thresholds
+   - Circuit breaker pattern implementation
+
+### Integration Points
+- **Phase 4 Monitoring**: Full integration with metrics collection and alerting
+- **Phase 5 Bug Tracking**: Performance failures trigger intelligent bug tracking
+- **Docker Services**: Dedicated performance testing containers
+- **CI/CD Ready**: Performance test results integrated into build artifacts
+
 ## Future Phases Integration
 
-- **Phase 5**: GitHub Issues integration adds automation layer
-- **Phase 6**: Performance testing builds on Phase 4 monitoring foundation
 - **Phase 7**: Advanced features adds chaos/contract testing with monitoring
 - **Phase 8**: Production polish adds optimization layer
 
-This architecture ensures maintainability, scalability, and professional QA practices throughout all development phases. Phase 4 provides the foundation for advanced monitoring and alerting that will enhance all future phases.
+This architecture ensures maintainability, scalability, and professional QA practices throughout all development phases. The framework now provides comprehensive testing capabilities from basic smoke tests to intelligent bug tracking and performance testing.
