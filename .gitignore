@@ -88,15 +88,35 @@ test-reports/
 .pytest_cache/
 pytest-cache-files-*/
 
+# Allure test results (already covered in Allure section but adding here for clarity)
+allure-results/
+allure-reports/
+
 # HTML test reports
 *.html
 report.html
 test_report.html
 
-# JSON test reports  
-*.json
+# JSON test reports (but keep configuration files)
+reports/*.json
+test-reports/*.json
 report.json
 test_report.json
+api_metrics.json
+custom_metrics.json
+system_metrics.json
+test_metrics.json
+metrics_summary.json
+test_execution_summary.json
+failure_history.json
+daily_issues.json
+**/performance_results_*.json
+**/request_response_capture.json
+
+# Keep important config JSON files
+!package.json
+!pytest.ini
+!requirements.txt
 
 # Coverage reports
 .coverage
@@ -155,6 +175,7 @@ ci-temp/
 secrets.json
 config.json
 local_config.py
+config/
 
 # API keys and credentials (NEVER commit these)
 *.key
@@ -256,6 +277,7 @@ temp/
 .tmp/
 *.tmp
 *.temp
+docs/geotest-roadmap.md
 
 # OS/User generated files
 .DS_Store
@@ -265,8 +287,6 @@ temp/
 .Trashes
 ehthumbs.db
 Thumbs.db
-geotest-roadmap.md
-CLAUDE.md
 
 # =============================================================================
 # PHASE-SPECIFIC IGNORES
@@ -291,10 +311,12 @@ trend_data/
 # Phase 5: Bug tracking integration
 github_issues_cache/
 issue_templates_generated/
+failure_reports/
 
 # Phase 6: Performance testing
 locust_results/
 performance_baseline/
+performance_analysis/
 
 # Phase 7: Advanced features
 chaos_test_results/
@@ -340,6 +362,14 @@ auto_generated_docs/
 
 # HTTP cache
 .requests-cache.sqlite
+
+# Consolidated module artifacts (Phase 6 consolidation)
+/src/*_old.py
+/src/performance_testing.py.bak
+/src/performance_analyzer.py.bak
+/src/load_generator.py.bak
+/src/failure_analyzer.py.bak
+/src/failure_reports.py.bak
 
 # =============================================================================
 # SECURITY & COMPLIANCE
@@ -396,3 +426,40 @@ orchestration_cache/
 !*_template.*
 !*_example.*
 !sample_*
+
+# =============================================================================
+# GEOTEST FRAMEWORK SPECIFIC PATTERNS (Based on current codebase)
+# =============================================================================
+
+# Test execution artifacts
+test_execution_*.log
+execution_*.json
+
+# Development and backup files from consolidation
+tests/*_old.py
+src/*_old.py
+*_backup.py
+*_original.py
+
+# Phase-specific generated content
+/reports/dashboard.html
+/reports/*-report.html
+/reports/*-report.json
+/reports/monitoring_demo_dashboard.html
+
+# Performance testing output directories that exist
+/performance_baseline/
+/performance_analysis/
+
+# Keep essential framework files
+!CLAUDE.md
+!README.md
+!conftest.py
+!pytest.ini
+!requirements.txt
+!docker-compose.yml
+!Dockerfile
+
+# Keep test data structure files (but not generated data)
+!tests/data/*.csv
+!scripts/*.py

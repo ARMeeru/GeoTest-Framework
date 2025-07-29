@@ -33,3 +33,9 @@ psutil>=5.9.0
 plotly>=5.17.0
 kaleido>=0.2.1
 click>=8.1.0
+
+# Phase 5: Performance Testing
+aiohttp>=3.9.0
+numpy>=1.24.0
+matplotlib>=3.7.0
+asyncio-throttle>=1.0.2
