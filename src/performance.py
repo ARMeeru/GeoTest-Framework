@@ -22,6 +22,7 @@ from plotly.subplots import make_subplots
 
 from .api_client import RestCountriesClient
 from .monitoring import get_metrics_collector
+from .load_generator import AsyncLoadGenerator, LoadConfig, LoadPattern as AsyncLoadPattern, UserBehavior as AsyncUserBehavior
 
 logger = logging.getLogger(__name__)
 
@@ -319,14 +320,34 @@ class UnifiedPerformanceEngine:
         return result
     
     def load_test(self, endpoint: str, concurrent_users: int, 
-                  total_requests: int, test_name: str = None) -> LoadTestResult:
-        """Execute a load test with concurrent users"""
+                  total_requests: int, test_name: str = None,
+                  async_mode: bool = False) -> LoadTestResult:
+        """
+        Execute a load test with concurrent users.
+        
+        Args:
+            endpoint: The API endpoint to test
+            concurrent_users: Number of virtual users
+            total_requests: Total number of requests to perform
+            test_name: Optional name for the test
+            async_mode: If True, uses the AsyncLoadGenerator (asyncio) instead of threading.
+                        Recommended for high concurrency (>50 users).
+        """
         test_name = test_name or f"load_test_{endpoint.replace('/', '_')}"
-        logger.info(f"Starting load test: {test_name} with {concurrent_users} users, {total_requests} total requests")
+        
+        # Auto-switch to async mode for high concurrency if not specified
+        if not async_mode and concurrent_users > 50:
+            logger.info(f"High concurrency detected ({concurrent_users} users). Switching to async mode.")
+            async_mode = True
+            
+        if async_mode:
+            return self._run_async_load_test(endpoint, concurrent_users, total_requests, test_name)
+            
+        logger.info(f"Starting synchronous load test: {test_name} with {concurrent_users} users, {total_requests} total requests")
         
         start_time = time.time()
         results = []
-        requests_per_user = total_requests // concurrent_users
+        requests_per_user = max(1, total_requests // concurrent_users)
         
         def user_simulation(user_id: int) -> List[PerformanceResult]:
             client = self.create_client()
@@ -439,6 +460,93 @@ class UnifiedPerformanceEngine:
         )
         
         logger.info(f"Load test completed: {success_count}/{len(results)} successful, {success_rate:.1f}% success rate, {requests_per_second:.1f} RPS")
+        return load_result
+
+    def _run_async_load_test(self, endpoint: str, concurrent_users: int, 
+                            total_requests: int, test_name: str) -> LoadTestResult:
+        """Helper to run the async load generator and map results"""
+        logger.info(f"Starting ASYNC load test: {test_name} with {concurrent_users} users")
+        
+        # 1. Adapt Configuration
+        # Determine duration based on request count approximation
+        # Assuming ~5 requests per second per user as a rough guess to set a timeout/duration cap
+        estimated_duration = max(10, total_requests // concurrent_users // 2) 
+        
+        load_config = LoadConfig(
+            pattern=AsyncLoadPattern.CONSTANT,
+            duration_seconds=estimated_duration + 30, # Buffer
+            min_users=concurrent_users,
+            max_users=concurrent_users,
+            requests_per_user=total_requests // concurrent_users
+        )
+        
+        # 2. Adapt Behavior
+        # We target a single endpoint for this specific method call
+        behavior = AsyncUserBehavior(
+            name=f"behavior_{test_name}",
+            endpoints=[endpoint],
+            weights=[1.0],
+            think_time_min=0.1, # Fast execution
+            think_time_max=0.5
+        )
+        
+        # 3. Execute Async Generator
+        generator = AsyncLoadGenerator(self.base_url)
+        
+        # Run in new event loop if needed
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+        if loop.is_running():
+            # If we are already in an async context (unlikely for pytest regular test),
+            # this might be tricky. But assuming standard pytest execution:
+            # We can't use run_until_complete if loop is running.
+            # For now, we assume this is called from sync context.
+            # If called from async, the user should use AsyncLoadGenerator directly.
+             logger.warning("Event loop is already running. Nesting might fail. Consider using AsyncLoadGenerator directly.")
+        
+        result_future = generator.generate_load_pattern(load_config, behavior)
+        gen_result = loop.run_until_complete(result_future)
+        
+        # 4. Map Results back to LoadTestResult
+        # Need to calculate percentiles from raw results if available, 
+        # but LoadGenerationResult already provides min/avg/max.
+        # We will approximate median/p95/p99 from available info or raw results if accessible.
+        
+        # Accessing internal results of generator for better percentile calc
+        response_times = [r['duration'] for r in generator.results if r['success']]
+        
+        median_resp = statistics.median(response_times) if response_times else 0
+        p95_resp = 0
+        p99_resp = 0
+        if response_times:
+            sorted_times = sorted(response_times)
+            p95_resp = sorted_times[int(0.95 * len(sorted_times))]
+            p99_resp = sorted_times[int(0.99 * len(sorted_times))]
+            
+        load_result = LoadTestResult(
+            test_name=test_name,
+            total_requests=gen_result.total_requests,
+            concurrent_users=gen_result.peak_concurrent_users,
+            duration=gen_result.actual_duration,
+            success_count=gen_result.successful_requests,
+            error_count=gen_result.failed_requests,
+            success_rate=(gen_result.successful_requests / gen_result.total_requests * 100) if gen_result.total_requests else 0,
+            avg_response_time=gen_result.avg_response_time,
+            min_response_time=gen_result.min_response_time,
+            max_response_time=gen_result.max_response_time,
+            median_response_time=median_resp,
+            p95_response_time=p95_resp,
+            p99_response_time=p99_resp,
+            requests_per_second=gen_result.requests_per_second,
+            errors_per_second=len(gen_result.errors_by_type) / gen_result.actual_duration if gen_result.actual_duration else 0, # Approx
+            timestamp=datetime.now(timezone.utc).isoformat()
+        )
+        
+        logger.info(f"Async load test completed: {load_result.success_count} success, {load_result.requests_per_second:.1f} RPS")
         return load_result
     
     def stress_test(self, endpoint: str, min_users: int = 1, max_users: int = 100, 

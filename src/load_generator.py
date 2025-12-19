@@ -128,7 +128,8 @@ class AsyncLoadGenerator:
     
     async def simulate_user(self, session: aiohttp.ClientSession, 
                            user_id: int, behavior: UserBehavior, 
-                           duration: float = None) -> List[Dict[str, Any]]:
+                           duration: float = None,
+                           max_requests: int = None) -> List[Dict[str, Any]]:
         # Simulate a single user's behavior
         user_results = []
         start_time = time.time()
@@ -139,6 +140,10 @@ class AsyncLoadGenerator:
         
         try:
             while time.time() < session_end:
+                # Check request limit
+                if max_requests and len(user_results) >= max_requests:
+                    break
+                    
                 # Select endpoint based on weights
                 endpoint = random.choices(behavior.endpoints, weights=behavior.weights)[0]
                 
@@ -188,7 +193,8 @@ class AsyncLoadGenerator:
                 # Constant load - start all users at once
                 for user_id in range(config.max_users):
                     task = asyncio.create_task(
-                        self.simulate_user(session, user_id, behavior, config.duration_seconds)
+                        self.simulate_user(session, user_id, behavior, 
+                                         config.duration_seconds, config.requests_per_user)
                     )
                     user_tasks.append(task)
                 
@@ -198,8 +204,13 @@ class AsyncLoadGenerator:
                     'action': 'constant_load_started'
                 })
                 
-                # Wait for completion
-                await asyncio.sleep(config.duration_seconds)
+                # Wait for completion or timeout
+                if user_tasks:
+                   done, pending = await asyncio.wait(user_tasks, timeout=config.duration_seconds)
+                   if len(pending) > 0:
+                       logger.info(f"{len(pending)} user sessions timed out")
+                else:
+                   await asyncio.sleep(config.duration_seconds)
                 
             elif config.pattern == LoadPattern.RAMP_UP:
                 # Gradual ramp up
@@ -222,7 +233,7 @@ class AsyncLoadGenerator:
                         for user_id in range(current_users, target_users):
                             task = asyncio.create_task(
                                 self.simulate_user(session, user_id, behavior, 
-                                                 config.duration_seconds - second)
+                                                 config.duration_seconds - second, config.requests_per_user)
                             )
                             user_tasks.append(task)
                     
@@ -242,7 +253,8 @@ class AsyncLoadGenerator:
                 # Start with minimum users
                 for user_id in range(config.min_users):
                     task = asyncio.create_task(
-                        self.simulate_user(session, user_id, behavior, config.duration_seconds)
+                        self.simulate_user(session, user_id, behavior, 
+                                         config.duration_seconds, config.requests_per_user)
                     )
                     user_tasks.append(task)
                 
@@ -251,7 +263,8 @@ class AsyncLoadGenerator:
                 # Add spike users
                 for user_id in range(config.min_users, config.max_users):
                     task = asyncio.create_task(
-                        self.simulate_user(session, user_id, behavior, spike_duration)
+                        self.simulate_user(session, user_id, behavior, 
+                                         spike_duration, config.requests_per_user)
                     )
                     user_tasks.append(task)
                 
@@ -283,7 +296,8 @@ class AsyncLoadGenerator:
                     for user_id in range(len(user_tasks), current_users):
                         remaining_time = config.duration_seconds - (time.time() - start_time)
                         task = asyncio.create_task(
-                            self.simulate_user(session, user_id, behavior, remaining_time)
+                            self.simulate_user(session, user_id, behavior, 
+                                             remaining_time, config.requests_per_user)
                         )
                         user_tasks.append(task)
                     
