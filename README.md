@@ -1,3 +1,5 @@
+> **Archived (September 2026).** A five-day exercise from July 2025: a six-phase pytest framework for API testing (data-driven suites, Dockerized CI, dashboards, alerting, automated issue tracking, load testing) pointed at the public REST Countries API. The scaffolding outgrew the target, and the async load engine was broken from the start in a way its own CI never caught. The part I'd keep is the functional test suite in `tests/`. What I actually build now lives in [reprove](https://github.com/ARMeeru/reprove).
+
 # GeoTest Framework
 
 An API testing framework using REST Countries API that demonstrates modern QA engineering practices.
